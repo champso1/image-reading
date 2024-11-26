@@ -9,6 +9,9 @@ pub fn build(b: *std.Build) !void {
         .optimize = b.standardOptimizeOption(.{}),
     });
 
+    exe.linkLibC();
+    exe.linkSystemLibrary("raylib");
+
     b.installArtifact(exe);
 
     // create the run step
