@@ -10,6 +10,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     exe.linkLibC();
+    // exe.addLibraryPath(b.path("./deps/raylib/lib")); // for Windows
     exe.linkSystemLibrary("raylib");
 
     b.installArtifact(exe);
