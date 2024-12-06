@@ -1,17 +1,26 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) !void {
-    // makes an exe, i guess lmao
+
+    const target = b.standardTargetOptions(.{}); 
+    
     const exe = b.addExecutable(.{
         .name = "main",
         .root_source_file = b.path("src/main.zig"),
-        .target = b.standardTargetOptions(.{}),
+        .target = target,
         .optimize = b.standardOptimizeOption(.{}),
     });
 
-    exe.linkLibC();
-    // exe.addLibraryPath(b.path("./deps/raylib/lib")); // for Windows
+
+    if (target.result.os.tag == .windows) {
+        exe.addIncludePath(b.path("deps/win/raylib/include"));
+        exe.addLibraryPath(b.path("deps/win/raylib/lib"));
+        exe.linkSystemLibrary("opengl32");
+        exe.linkSystemLibrary("gdi32");
+        exe.linkSystemLibrary("winmm");
+    }
     exe.linkSystemLibrary("raylib");
+    exe.linkLibC();
 
     b.installArtifact(exe);
 
