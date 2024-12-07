@@ -64,3 +64,86 @@ pub fn crc32(data: []const u8) u32 {
     return ~crc;
 }
 
+
+
+pub fn Matrix(T: anytype) type {
+    return struct{
+        const Self = @This();
+        
+        w: usize,
+        h: usize,
+
+        data: []T,
+
+        pub fn init(data: []T, width: usize, height: usize) Self {
+            return .{
+                .data = data,
+                .w = width,
+                .h = height,
+            };
+        }
+
+        pub const MatrixError = error{
+            IndexOutOfBounds,
+        };
+        
+        pub fn get(self: *Self, row: usize, col: usize) MatrixError!T {
+            if (row >= self.h or col >= self.w) return MatrixError.IndexOutOfBounds;
+
+            return self.data[row*self.w + col];
+        }
+
+        pub fn set(self: *Self, row: usize, col: usize, val: T) MatrixError!void {
+            if (row >= self.h or col >= self.w) return MatrixError.IndexOutOfBounds;
+
+            self.data[row*self.w + col] = val;
+        }
+    };
+}
+
+
+const rl = @import("raylib.zig");
+
+
+
+pub const Color = struct{
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+
+    pub fn toRaylibColor(self: Color) rl.Color {
+        return rl.Color{
+            .r = self.r, .g = self.g, .b = self.b, .a = self.a,
+        };
+    }
+
+    // manually making the struct is annoying...
+    pub fn grayscale(x: u8) Color {
+        return Color{
+            .r = x, .g = x, .b = x, .a = 255,
+        };
+    }
+
+    pub const ZeroColor = Color{
+        .r = 0, .g = 0, .b = 0, .a = 255,
+    };
+
+    pub fn add(color1: Color, color2: Color) Color {
+        return Color{
+            .r = color1.r +% color2.r,
+            .g = color1.g +% color2.g,
+            .b = color1.b +% color2.b,
+            .a = 255,
+        };
+    }
+
+    pub fn sub(color1: Color, color2: Color) Color {
+        return Color{
+            .r = color1.r -% color2.r,
+            .g = color1.g -% color2.g,
+            .b = color1.b -% color2.b,
+            .a = 255,
+        };
+    }
+};
