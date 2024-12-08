@@ -18,11 +18,11 @@ Maybe since I provide binaries for Windows already I can do the same for Linux a
 
 ## TODO
 
-[x] Display a grayscale image.
-[x] Display an image with a color type of 2, corresponding to an RGB image.
-[X] Implement the Paeth Predictor for a scanline filter-byte of 4.
-[] Move rendering to glfw/opengl.
-[] Display images with a color depth of something other than 8.
+- [x] Display a grayscale image.
+- [x] Display an image with a color type of 2, corresponding to an RGB image.
+- [X] Implement the Paeth Predictor for a scanline filter-byte of 4.
+- [ ] Move rendering to glfw/opengl.
+- [ ] Display images with a color depth of something other than 8.
 
 ## Future Plans
 
