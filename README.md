@@ -11,10 +11,14 @@ At the moment, I am able to extract the raw data from a grayscale PNG and an 8-b
 Download and install [Raylib](https://github.com/raysan5/raylib). Ensure that the header and library files are available to the system. Once this is done, just do:
 
 ```
-zig build run
+zig build run -- <path-to-png>
 ```
 
-Maybe since I provide binaries for Windows already I can do the same for Linux as well, and maybe give the option to use those or user-provided ones.
+The path to the png file is relative to `build.zig`. For instance, I'd run
+
+```
+zig build run -- ./res/pic_rgb_big.png
+```
 
 ## TODO
 
