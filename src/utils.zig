@@ -98,6 +98,17 @@ pub fn Matrix(T: anytype) type {
 
             self.data[row*self.w + col] = val;
         }
+
+        pub fn print(self: Self) void {
+            std.debug.print("[", .{});
+            for (self.data, 0..) |x, i| {
+                if (i%self.w == 0) {
+                    std.debug.print("\n\t", .{});
+                }
+                x.print();
+            }
+            std.debug.print("\n]\n", .{});
+        }
     };
 }
 
@@ -145,5 +156,9 @@ pub const Color = struct{
             .b = color1.b -% color2.b,
             .a = 255,
         };
+    }
+
+    pub fn print(self: Color) void {
+        std.debug.print("({d},{d},{d})", .{self.r, self.g, self.b});
     }
 };

@@ -11,8 +11,8 @@ const PNGFile = @import("PNGFile.zig");
 const rl = @import("raylib.zig");
 
 
-const win_w: c_int = 400;
-const win_h: c_int = 400;
+const win_w: c_int = 800;
+const win_h: c_int = 800;
 
 
 fn drawImage(mat: Matrix(Color)) void {
@@ -37,9 +37,14 @@ pub fn main() !void {
     defer arena.deinit();
     const alloc = arena.allocator();
 
-    const file_name: [:0]const u8 = "./res/pic_rgb.png";
+    const args = try std.process.argsAlloc(alloc);
+
+    if (args.len != 2) @panic("Incorrect number of arguments");
+
+    const file_name: [:0]const u8 = args[1];
     const file: std.fs.File = try std.fs.cwd().openFile(file_name, .{});
-    const png_file: PNGFile = try PNGFile.init(&alloc, file);
+    var png_file: PNGFile = try PNGFile.init(&alloc, file);
+    (try png_file.img_data.get(16, 0)).print();
 
     rl.InitWindow(win_w,win_h, file_name);
     defer rl.CloseWindow();

@@ -185,6 +185,7 @@ fn getBytes(arr: []u8, idx: *usize, num_bytes: usize) []u8 {
 /// filter byte=0 means that there is no filtering,
 /// i.e. recon(x) = filt(x)
 fn filterLineNone(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
+    std.debug.print("{d} ", .{row});
     const line_width: usize = matrix.w*fac;
     var idx_line: usize = 0;
     var idx_mat: usize = 0;
@@ -210,7 +211,7 @@ fn filterLineNone(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8)
 // recon(x) = filt(x) + recon(a)
 // a is the byte before,
 // a is 0 for the first byte
-fn filterLineAdd(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
+fn filterLineSub(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
     const line_width: usize = matrix.w*fac;
     var idx_line: usize = 0;
     var idx_mat: usize = 0;
@@ -240,7 +241,7 @@ fn filterLineAdd(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) 
 }
 
 
-fn filterLinePaethPredictor(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
+fn filterLineUp(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
     const line_width: usize = matrix.w*fac;
     var idx_line: usize = 0;
     var idx_mat: usize = 0;
@@ -249,27 +250,41 @@ fn filterLinePaethPredictor(matrix: *Matrix(Color), line: []const u8, row: usize
         idx_line += fac;
         idx_mat += 1;
     }) {
-        var a: Color = undefined;
-        var b: Color = undefined;
-        var c: Color = undefined;
-
-        if (idx_mat == 0) {
-            a = Color.ZeroColor;
-            b = Color.ZeroColor;
-            c = Color.ZeroColor;
-        } else if (row == 0) {
-            a = try matrix.get(row, idx_mat-1);
-            b = Color.ZeroColor;
-            c = Color.ZeroColor;
-        } else {
-            a = try matrix.get(row, idx_mat-1);
-            b = try matrix.get(row-1, idx_mat);
-            c = try matrix.get(row-1, idx_mat-1);
-        }
-        
+        const b: Color = if (row == 0) Color.ZeroColor else try matrix.get(row-1, idx_mat);
         const x: u8 = line[idx_line];
         var rgb: [3]u8 = [_]u8{x,x,x};
         
+        for (1..fac) |l| {
+            rgb[l] = line[idx_line+l];
+        }
+
+        const color = Color.add(
+            Color{.r = rgb[0], .g = rgb[1], .b = rgb[2], .a = 255,},
+            b
+        );
+
+        try matrix.set(row, idx_mat, color);
+    }
+}
+
+
+fn filterLinePaethPredictor(matrix: *Matrix(Color), line: []const u8, row: usize, fac: u8) Matrix(Color).MatrixError!void {
+    const line_width: usize = matrix.w*fac;
+    var idx_line: usize = 0;
+    var idx_mat: usize = 0;
+
+    var a: Color = Color.ZeroColor;
+    
+    while (idx_line < line_width) : ({
+        idx_line += fac;
+        idx_mat += 1;
+    }) {
+        const b: Color = if (row == 0) Color.ZeroColor else try matrix.get(row-1, idx_mat);
+        const c: Color = if ((row != 0) and (idx_mat != 0)) try matrix.get(row-1, idx_mat-1) else Color.ZeroColor;
+        
+        const x: u8 = line[idx_line];
+        
+        var rgb: [3]u8 = [_]u8{x,x,x};
         for (1..fac) |i| {
             rgb[i] = line[idx_line+i];
         }
@@ -280,6 +295,7 @@ fn filterLinePaethPredictor(matrix: *Matrix(Color), line: []const u8, row: usize
         );
        
         try matrix.set(row, idx_mat, color);
+        a = color;
     }
     
 }
@@ -296,12 +312,12 @@ fn PaethPredictor(a: Color, b: Color, c: Color) Color {
     // otherwise i guess I'd just make it a packed struct and just bit twiddle?
     const color_fields = comptime std.meta.fields(Color);
     inline for (color_fields) |field| {
-        if ((@field(pa, field.name) < @field(pb, field.name)) and (@field(pb, field.name) < @field(pc, field.name))) {
-            @field(Pr, field.name) = @field(pa, field.name);
-        } else if (@field(pb, field.name) < @field(pc, field.name)) {
-            @field(Pr, field.name) = @field(pb, field.name);
+        if ((@field(pa, field.name) <= @field(pb, field.name)) and (@field(pb, field.name) <= @field(pc, field.name))) {
+            @field(Pr, field.name) = @field(a, field.name);
+        } else if (@field(pb, field.name) <= @field(pc, field.name)) {
+            @field(Pr, field.name) = @field(b, field.name);
         } else {
-            @field(Pr, field.name) = @field(pc, field.name);
+            @field(Pr, field.name) = @field(c, field.name);
         }
     }
     return Pr;
@@ -325,15 +341,15 @@ fn toMatrix(alloc: *const Allocator, idat_data: []const u8, color_type: u8, img_
     
     const line_width: usize = img_w*fac + 1; // +1 for filter byte
 
-    // ready for some huge readability here
+    
     for (0..img_h) |idx_h| {
         const row = idx_h*line_width;
         const filter_byte: u8 = idat_data[row];
         const line: []const u8 = idat_data[row+1..row + line_width]; // no filter byte
         switch (filter_byte) {
             0 => {try filterLineNone(&matrix, line, idx_h, fac);},
-            1 => {try filterLineAdd(&matrix, line, idx_h, fac);},
-            2 => {@panic("Unsupported filter byte");},
+            1 => {try filterLineSub(&matrix, line, idx_h, fac);},
+            2 => {try filterLineUp(&matrix, line, idx_h, fac);},
             3 => {@panic("Unsupported filter byte");},
             4 => {try filterLinePaethPredictor(&matrix, line, idx_h, fac);},
             else => {@panic("Unsupported filter byte");}
