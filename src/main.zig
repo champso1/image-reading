@@ -43,9 +43,6 @@ pub fn main() !void {
     const file_name: [:0]const u8 = args[1];
     const file: std.fs.File = try std.fs.cwd().openFile(file_name, .{});
     const png_file: PNGFile = try PNGFile.init(&alloc, file);
-    std.debug.print("\n\nThis is the total image:\n", .{});
-    png_file.img_data.print();
-    std.debug.print("\n\n", .{});
 
     rl.initWindow(win_w,win_h, file_name);
     defer rl.closeWindow();

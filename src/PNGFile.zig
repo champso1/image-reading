@@ -152,19 +152,17 @@ pub fn init(alloc: *const Allocator, file_handle: std.fs.File) !Self {
             // must decompress
             const bytes = chunk_data[4..chunk_size+4];
             var bytes_reader = std.Io.Reader.fixed(bytes);
-            std.debug.print("[INFO] Raw, deflated bytes:\n{any}\n", .{bytes});
             
             var inflated_bytes: [1028]u8 = [_]u8{0} ** 1028;
             var bytes_writer = std.io.Writer.fixed(&inflated_bytes);
             
             var decompressor = std.compress.flate.Decompress.init(&bytes_reader, .zlib, &.{});
             const decompressor_reader = &decompressor.reader;
+            _ = try decompressor_reader.streamRemaining(&bytes_writer);
             
-            const num_bytes = try decompressor_reader.streamRemaining(&bytes_writer);
-            std.debug.print("[INFO] Allegedly, we have a buffer of sheisse now:\n{x}\n", .{inflated_bytes[0..num_bytes]});
-
             img_data = try toMatrix(alloc, &inflated_bytes, color_type, img_w, img_h);
-            
+
+            std.debug.print("[INFO] Ending parsing now that IDAT data has been parsed.\n", .{});
             break;
         } else {
             std.debug.print("[INFO] Found {s} chunk. Skipping...\n", .{chunk_name});
