@@ -113,7 +113,7 @@ pub fn Matrix(T: anytype) type {
 }
 
 
-const rl = @import("raylib.zig");
+const rl = @import("raylib");
 
 
 

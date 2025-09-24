@@ -1,4 +1,4 @@
-const std = @import("std");
+const std = @import("std");     
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
@@ -57,11 +57,14 @@ const MAX_FILE_SIZE: comptime_int = 8*1000*1000;
 /// then it parses the remaining chunk, storing ancillary chunks in a separate array
 /// and decompressing the IDAT data.
 pub fn init(alloc: *const Allocator, file_handle: std.fs.File) !Self {
-    const file_reader: std.fs.File.Reader = file_handle.reader();
 
+    // this shoud allegedly read the file into the "file_contents" buffer...
+    const stat = try file_handle.stat();
+    const file_size = stat.size;
+    const file_contents = try alloc.*.alloc(u8, @intCast(file_size));
+    _ = try file_handle.readAll(file_contents);
+    
     var idx: usize = 0;
-    const file_contents: []u8 = try file_reader.readAllAlloc(alloc.*, MAX_FILE_SIZE);
-
     const signature: []u8 = getBytes(file_contents, &idx, 8);
     if (!std.mem.eql(u8, signature, PNG_SIGNATURE[0..])) {
         std.debug.print("[ERROR] Invalid PNG signature. Found {X:0>2} but expected {X:0>2}\n", .{
@@ -164,8 +167,7 @@ pub fn init(alloc: *const Allocator, file_handle: std.fs.File) !Self {
         
         .img_data = img_data,
 
-        .aux_chunks = aux_chunk_buf,
-        
+        .aux_chunks = aux_chunk_buf,    
     };
 }
 

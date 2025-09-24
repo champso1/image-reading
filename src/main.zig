@@ -8,7 +8,7 @@ const Matrix = utils.Matrix;
 const Color = utils.Color;
 
 const PNGFile = @import("PNGFile.zig");
-const rl = @import("raylib.zig");
+const rl = @import("raylib");
 
 
 const win_w: c_int = 800;
